@@ -8,6 +8,10 @@ const Document = sequelize.define('Document', {
         autoIncrement: true,
         primaryKey: true, 
     },
+    typeDocumentId: {  // 👈 clé étrangère
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     Titre: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -40,13 +44,10 @@ const Document = sequelize.define('Document', {
         type: DataTypes.TEXT,
         allowNull:false,
     },
-    IdMotcles:{
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
+    
 },{
     tableName: 'documents',
-    timestamp: true,
+    timestamps: true,
 });
 
 module.exports = Document;

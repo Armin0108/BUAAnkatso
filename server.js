@@ -8,7 +8,8 @@ const documentsRoutes= require('./modules/documents/routes/documents.routes');
 const intervenantsRoutes= require('./modules/intervenants/routes/intervenants.routes');
 const userRoutes= require('./modules/users/routes/users.routes');
 const motcleRoutes = require('./modules/motcles/routes/motcles.routes');
-
+const typedocumentsRoutes= require('./modules/typedocuments/routes/typedocuments.routes');
+const typeintervenantsRoutes= require('./modules/typeintervenants/routes/typeintervenants.routes');
 
 
 const app= express();
@@ -20,9 +21,11 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/intervenants', intervenantsRoutes);
 app.use('/api/motcles', motcleRoutes);
+app.use('/api/typedocuments',typedocumentsRoutes);
+app.use('/api/typeintervenants',typeintervenantsRoutes);
 
 app.use((req,res)=>{
-  res.status(404).json({message: 'Routre introuvable'});
+  res.status(404).json({message: 'Route introuvable'});
 });
 
 app.use((err,req,res,next)=>{
@@ -44,6 +47,9 @@ const PORT = process.env.PORT;
     require('./modules/users/models/users.models');
     require('./modules/documents/models/documents.models');
     require('./modules/motcles/models/motcles.models');
+    require('./modules/typedocuments/models/typedocuments.models');
+    require('./modules/typeintervenants/models/typeintervenants.models');
+    require('./modules/association/association');
     await sequelize.sync({
       alter: process.env.NODE_ENV === 'development',
       force: false

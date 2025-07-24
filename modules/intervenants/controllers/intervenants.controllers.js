@@ -1,0 +1,1 @@
+const IntervenantModel = require('../models/intervenants.models');

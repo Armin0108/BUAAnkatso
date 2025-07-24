@@ -15,8 +15,8 @@ const Intervenant = sequelize.define('Intervenant', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    TypeIntervenant: {
-        type: DataTypes.STRING,
+    typeIntervenantId: {  // 👈 clé étrangère
+        type: DataTypes.INTEGER,
         allowNull: false,
     },
     Bio: {

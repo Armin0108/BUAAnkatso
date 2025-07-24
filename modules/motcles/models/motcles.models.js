@@ -8,7 +8,7 @@ const Motcle = sequelize.define('Motcle', {
     primaryKey: true,
     autoIncrement: true,
   },
-  Mocles:{
+  Motcles:{
     type: DataTypes.STRING,
     allowNull: false,
   },

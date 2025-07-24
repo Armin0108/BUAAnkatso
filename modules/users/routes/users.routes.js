@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const userController = require('../controllers/users.controllers');
 
-// Route de test
-router.get('/', (req, res) => {
-  res.send('Module fonctionnel');
-});
+// Connexion
+router.post('/login', userController.loginUser);
+router.post('/register', userController.createUser);
+
 
 module.exports = router;

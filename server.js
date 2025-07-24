@@ -3,6 +3,11 @@ const express=require('express');
 const sequelize= require ('./configs/sequelize');
 const cors = require ('cors');
 
+const app= express();
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({extended:true}));
+app.use(express.json());
 
 const documentsRoutes= require('./modules/documents/routes/documents.routes');
 const intervenantsRoutes= require('./modules/intervenants/routes/intervenants.routes');
@@ -11,11 +16,6 @@ const motcleRoutes = require('./modules/motcles/routes/motcles.routes');
 const typedocumentsRoutes= require('./modules/typedocuments/routes/typedocuments.routes');
 const typeintervenantsRoutes= require('./modules/typeintervenants/routes/typeintervenants.routes');
 
-
-const app= express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({extended:true}));
 
 app.use('/api/documents', documentsRoutes);
 app.use('/api/users', userRoutes);

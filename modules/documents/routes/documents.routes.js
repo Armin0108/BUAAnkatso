@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const documentsController= require('../../documents/controllers/documents.controllers');
 
-// Route de test
-router.get('/', (req, res) => {
-  res.send('Module fonctionnel');
-});
+router.post('/create-documentation',documentsController.createFullDocument );
 
 module.exports = router;

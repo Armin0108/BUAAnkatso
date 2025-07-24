@@ -39,3 +39,18 @@ TypeDocument.hasMany(Document, {
     otherKey: 'DocumentId',
     as: 'documents'
   });
+
+  // Many-to-Many entre Intervenant et Document
+Intervenant.belongsToMany(Document, {
+  through: 'IntervenantDocument',
+  foreignKey: 'intervenantId',
+  otherKey: 'DocumentId',
+  as: 'documents'
+});
+
+Document.belongsToMany(Intervenant, {
+  through: 'IntervenantDocument',
+  foreignKey: 'DocumentId',
+  otherKey: 'intervenantId',
+  as: 'intervenants'
+});

@@ -1,1 +1,1 @@
-const IntervenantModel = require('../models/intervenants.models');
+const Intervenant = require('../models/intervenants.models');

@@ -15,7 +15,7 @@ const userRoutes= require('./modules/users/routes/users.routes');
 const motcleRoutes = require('./modules/motcles/routes/motcles.routes');
 const typedocumentsRoutes= require('./modules/typedocuments/routes/typedocuments.routes');
 const typeintervenantsRoutes= require('./modules/typeintervenants/routes/typeintervenants.routes');
-
+const urlVideoRoutes= require('./modules/urlvideo/routes/urlVideo.routes')
 
 app.use('/api/documents', documentsRoutes);
 app.use('/api/users', userRoutes);
@@ -23,6 +23,7 @@ app.use('/api/intervenants', intervenantsRoutes);
 app.use('/api/motcles', motcleRoutes);
 app.use('/api/typedocuments',typedocumentsRoutes);
 app.use('/api/typeintervenants',typeintervenantsRoutes);
+app.use('/api/urlVideo',urlVideoRoutes);
 
 app.use((req,res)=>{
   res.status(404).json({message: 'Route introuvable'});
@@ -49,7 +50,9 @@ const PORT = process.env.PORT;
     require('./modules/motcles/models/motcles.models');
     require('./modules/typedocuments/models/typedocuments.models');
     require('./modules/typeintervenants/models/typeintervenants.models');
-    require('./modules/association/association');
+    require('./modules/urlVideo/models/urlVideo.models');
+    require('./modules/relations');
+    
     await sequelize.sync({
       alter: process.env.NODE_ENV === 'development',
       force: false

@@ -3,7 +3,7 @@ const sequelize= require('../../../configs/sequelize');
 const { types } = require('pg');
 
 const Document = sequelize.define('Document', {
-    ID: {
+    id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true, 
@@ -12,39 +12,35 @@ const Document = sequelize.define('Document', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    Titre: {
+    titre: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    Auteur: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    DateEdition: {
+    datepub: {
         type: DataTypes.DATE,
         allowNull: true,
     },
-    Domaine: {
+    domaine: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    Mention: {
+    auteur: {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    UrlDOC: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    UrlVideo: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    Resume: {
+    bio: {
         type: DataTypes.TEXT,
-        allowNull:false,
+        allowNull: true,
     },
-    
+    urlLivre:{
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    mention: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+   
 },{
     tableName: 'documents',
     timestamps: true,

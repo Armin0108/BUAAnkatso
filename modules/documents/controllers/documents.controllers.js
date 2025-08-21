@@ -3,70 +3,124 @@ const TypeDocument=require('../../typedocuments/models/typedocuments.models');
 const Intervenant= require('../../intervenants/models/intervenants.models');
 const TypeIntervenant= require('../../typeintervenants/models/typeintervenants.models');
 const Motcle=require('../../motcles/models/motcles.models');
+const UrlVideo= require('../../urlVideo/models/urlVideo.models');
 
 const createFullDocument = async (req, res) => {
     try {
-        const {
+        const{
+            titre,
             typeDocumentId,
-            Titre,
-            Auteur,
-            DateEdition,
-            Domaine,
-            Mention,
-            UrlDOC,
-            UrlVideo,
-            Resume,
-            intervenants, // tableau [{ Nom, Prenom, typeIntervenantId, Bio, Photo, UrlVideo }]
-            motcles // tableau ["IA", "ML"]
-        } = req.body;
+            auteur,
+            domaine,
+            bio,
+            mention,
+            datepub,
+            intervenant: intervData, video: videoData,motscles
+        }= req.body;
 
-        // 1. Chercher si le document existe
-        let document = await Document.findOne({
-            where: { Titre, Auteur, DateEdition }
-        });
+        // Gestion TypeDocument
+        let typeDoc = await TypeDocument.findOne({ where: { typeDocuments: typeDocumentId } });
+        if (!typeDoc) {
+            typeDoc = await TypeDocument.create({ typeDocuments: typeDocumentId });
+        }
 
-        // 2. Sinon créer un nouveau document
-        if (!document) {
-            document = await Document.create({
-                typeDocumentId,
-                Titre,
-                Auteur,
-                DateEdition,
-                Domaine,
-                Mention,
-                UrlDOC,
-                UrlVideo,
-                Resume
+       // Récupération pdf 
+       const pdfFile = req.files.pdfFile?.[0];
+       const pdfPath = `uploads/documents/${pdfFile.filename}`;
+
+        //Vérification et création document
+        let document= await Document.findOne({where:{titre}});
+        if(!document){
+            document= await Document.create({
+                titre,
+                typeDocumentId: typeDoc.id,
+                auteur,
+                domaine,
+                bio,
+                mention,
+                datepub,
+                urlLivre: pdfPath
             });
         }
 
-        // 3. Ajouter chaque intervenant, même si doublon
-        if (intervenants && intervenants.length > 0) {
-            for (const data of intervenants) {
-                const newIntervenant = await Intervenant.create(data);
-                await document.addIntervenant(newIntervenant); // liaison M:N
-            }
+        // Gestion TypeIntervenant
+        // -----------------------------
+        let typeInterv = await TypeIntervenant.findOne({ where: { typeIntervenants: intervData.typeIntervenantId } });
+        if (!typeInterv) {
+            typeInterv = await TypeIntervenant.create({ typeIntervenants: intervData.typeIntervenantId });
         }
 
-        // 4. Ajouter les mots-clés
-        if (motcles && motcles.length > 0) {
-            for (const mot of motcles) {
-                const [motcle, created] = await Motcle.findOrCreate({
-                    where: { Motcles: mot }
+        //Vérification et Création intervenant
+        const imageFile = req.files.imageFile?.[0];
+        const imagePath = imageFile ? `uploads/intervenants/${imageFile.filename}` : null;
+
+        let intervenant= await Intervenant.findOne({where: {nom:intervData.nom,prenom:intervData.prenom}});
+        if (!intervenant){
+            intervenant= await Intervenant.create({
+                nom: intervData.nom,
+                prenom: intervData.prenom,
+                typeIntervenantId: typeInterv.id,
+                bio: intervData.bio||null,
+                image: imagePath
+            });
+        }
+
+        //Création vidéo
+        const urlVideo= await UrlVideo.create({
+            urlVideo: videoData.url,
+            duree: videoData.duree,
+            resume: videoData.resume|| null,
+            documentId: document.id,
+            intervenantId: intervenant.id  
+        });
+
+        //création motcles
+        if (motscles) {
+            let motsclesArray = [];
+        
+            // Si Postman envoie une string : "Informatique, Linux, Système, open source"
+            if (typeof motscles === "string") {
+                motsclesArray = motscles
+                    .split(",")
+                    .map(m => m.trim())
+                    .filter(m => m.length > 0);
+            }
+            // Si déjà un tableau : ["Informatique", "Linux"]
+            else if (Array.isArray(motscles)) {
+                motsclesArray = motscles.map(m => m.trim());
+            }
+        
+            // Normaliser les mots-clés (évite doublons "Linux" / "linux")
+            motsclesArray = motsclesArray.map(m => m.toLowerCase());
+        
+            for (let mot of motsclesArray) {
+                // Vérifie si le mot-clé existe, sinon crée
+                const [motcle] = await Motcle.findOrCreate({
+                    where: { motcles: mot }
                 });
-                await document.addMotcle(motcle);
+        
+                // Vérifie si la relation Document-Motcle existe déjà
+                const existingRelation = await document.hasMotcle(motcle);
+        
+                if (!existingRelation) {
+                    await document.addMotcle(motcle);
+                }
             }
         }
+        
 
         return res.status(201).json({
-            message: 'Document créé ou lié avec intervenants multiples',
-            document
+            message: 'Document, intervenat, video et mot-cleés créés avec succès',
+            document,
+            intervenant,
+            urlVideo,
+            motscles
         });
-    } catch (error) {
-        console.error('Erreur création:', error);
-        return res.status(500).json({
-            message: "Erreur interne du serveur",
-            error: error.message
-        });
+
+    }catch (error){
+        console.error(error);
+        return res.status(500).json({message:'Ereur server',error : error.message});
     }
 };
+
+module.exports= {createFullDocument};

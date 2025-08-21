@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const urlVideoController= require('../../urlVideo/controllers/urlVideo.controlles.js');
+
+router.get('/', (req, res) => {
+  res.send('Route URL Video fonctionne !');
+});
+
+module.exports = router;
+

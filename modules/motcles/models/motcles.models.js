@@ -3,12 +3,12 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../../../configs/sequelize');
 
 const Motcle = sequelize.define('Motcle', {
-  ID: {
+  id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
-  Motcles:{
+  motcles:{
     type: DataTypes.STRING,
     allowNull: false,
   },

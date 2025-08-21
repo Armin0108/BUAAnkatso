@@ -2,16 +2,16 @@ const {DataTypes} = require ('sequelize');
 const sequelize = require ('../../../configs/sequelize');
 
 const Intervenant = sequelize.define('Intervenant', {
-    ID: {
+    id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true, 
     },
-    Nom: {
+    nom: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    Prenom: {
+    prenom: {
         type: DataTypes.STRING,
         allowNull: false,
     },
@@ -19,15 +19,15 @@ const Intervenant = sequelize.define('Intervenant', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    Bio: {
+    bio: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    Photo: {
+    image:{
         type: DataTypes.STRING,
         allowNull: true,
     },
-
+    
 },{
     tableName: 'intervenants',
     timestamps: true,

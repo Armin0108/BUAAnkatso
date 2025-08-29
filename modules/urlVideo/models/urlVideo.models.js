@@ -31,6 +31,7 @@ const UrlVideo = sequelize.define('UrlVideo', {
 },{
     tableName: 'urlvideo',
     timestamps: true,
+
 });
 
 module.exports = UrlVideo;

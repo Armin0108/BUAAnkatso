@@ -15,7 +15,7 @@ const userRoutes= require('./modules/users/routes/users.routes');
 const motcleRoutes = require('./modules/motcles/routes/motcles.routes');
 const typedocumentsRoutes= require('./modules/typedocuments/routes/typedocuments.routes');
 const typeintervenantsRoutes= require('./modules/typeintervenants/routes/typeintervenants.routes');
-const urlVideoRoutes= require('./modules/urlvideo/routes/urlVideo.routes')
+const urlVideoRoutes= require('./modules/urlVideo/routes/urlVideo.routes');
 
 app.use('/api/documents', documentsRoutes);
 app.use('/api/users', userRoutes);

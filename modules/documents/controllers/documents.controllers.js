@@ -4,6 +4,8 @@ const Intervenant= require('../../intervenants/models/intervenants.models');
 const TypeIntervenant= require('../../typeintervenants/models/typeintervenants.models');
 const Motcle=require('../../motcles/models/motcles.models');
 const UrlVideo= require('../../urlVideo/models/urlVideo.models');
+const fs = require('fs'); // au début du fichier
+const path = require('path');
 
 const createFullDocument = async (req, res) => {
     try {
@@ -26,10 +28,9 @@ const createFullDocument = async (req, res) => {
 
        // Récupération pdf 
        const pdfFile = req.files.pdfFile?.[0];
-       const pdfPath = `uploads/documents/${pdfFile.filename}`;
-
-        //Vérification et création document
-        let document= await Document.findOne({where:{titre}});
+       //Vérification et création document
+       let document= await Document.findOne({where:{titre,auteur,typeDocumentId:typeDoc.id}});
+        
         if(!document){
             document= await Document.create({
                 titre,
@@ -39,8 +40,26 @@ const createFullDocument = async (req, res) => {
                 bio,
                 mention,
                 datepub,
-                urlLivre: pdfPath
+                urlLivre: pdfFile ? pdfFile.filename: null
             });
+        }else if (pdfFile) {
+            // Document existant + nouveau PDF → remplacer l'ancien
+            const oldPdfPath = document.urlLivre;
+            document.urlLivre = pdfFile.filename;
+            await document.save();
+        
+            // Supprimer l'ancien fichier PDF
+            if (oldPdfPath) {
+                const fullPath= path.join(__dirname,'../../../uploads/documents',oldPdfPath);
+                if(fs.existsSync(fullPath)){
+                    fs.unlink(fullPath,(err)=>{
+                        if(err) console.error("Erreur de suppression ancien PDF:", err);
+                        else console.log("Ancien PDF supprimé: ", fullPath);
+                    });
+                }else {
+                    console.warn("Ancien PDF introuvable : ", fullPath);
+                }
+            }
         }
 
         // Gestion TypeIntervenant
@@ -52,28 +71,75 @@ const createFullDocument = async (req, res) => {
 
         //Vérification et Création intervenant
         const imageFile = req.files.imageFile?.[0];
-        const imagePath = imageFile ? `uploads/intervenants/${imageFile.filename}` : null;
 
         let intervenant= await Intervenant.findOne({where: {nom:intervData.nom,prenom:intervData.prenom}});
+        
         if (!intervenant){
             intervenant= await Intervenant.create({
                 nom: intervData.nom,
                 prenom: intervData.prenom,
                 typeIntervenantId: typeInterv.id,
                 bio: intervData.bio||null,
-                image: imagePath
+                image: imageFile ? imageFile.filename :  null
+            });
+        }else {
+            intervenant.typeIntervenantId = typeInterv.id;  
+            intervenant.bio = intervData.bio || intervenant.bio;
+            if (imageFile) {
+            // Intervenant existant + nouvelle image → remplacer l'ancienne
+            const oldImagePath = intervenant.image;
+            intervenant.image = imageFile.filename;
+            await intervenant.save();
+        
+            // Supprimer l'ancienne image
+                if (oldImagePath ) {
+                    const fullPath = path.join(__dirname, '../../../uploads/intervenants', oldImagePath);
+                    fs.unlink(fullPath,(err) => {
+                        if (err) console.error("Erreur suppression ancienne image:", err);
+                        else console.log("Ancienne image supprimé: ",fullPath);
+                    });
+                }else{
+                    console.warn("Ancienne image introuvable: ",fullPath);
+                }
+            }
+        }
+        
+        //Création vidéo
+        let urlVideo;
+        let existingVideo=await UrlVideo.findOne({
+            where: {documentId: document.id, intervenantId:intervenant.id}
+        });
+
+        if(existingVideo){
+            if(existingVideo.urlVideo===videoData.url){
+                //même video deja enregistree
+                return res.status(400).json({
+                    error: "cette Vidéo existe déjà pour ce document et intervenant"
+                });
+            }else{
+                //Même doc + même intervenant mais vidéo différenete== on remplace l'ancienne video
+                await existingVideo.update({
+                    urlVideo: videoData.url,
+                    duree: videoData.duree,
+                    resume: videoData.resume||null
+                });
+
+                return res.status(200).json({
+                    message: "Vidéo remplacée avec succès.",
+                    video: existingVideo
+                });
+            }
+        }else{
+                const urlVideo= await UrlVideo.create({
+                urlVideo: videoData.url,
+                duree: videoData.duree,
+                resume: videoData.resume|| null,
+                documentId: document.id,
+                intervenantId: intervenant.id  
             });
         }
 
-        //Création vidéo
-        const urlVideo= await UrlVideo.create({
-            urlVideo: videoData.url,
-            duree: videoData.duree,
-            resume: videoData.resume|| null,
-            documentId: document.id,
-            intervenantId: intervenant.id  
-        });
-
+        
         //création motcles
         if (motscles) {
             let motsclesArray = [];

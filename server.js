@@ -44,6 +44,7 @@ const PORT = process.env.PORT;
     await sequelize.authenticate();
     console.log('Connexion au DB avec succes');
 
+    require('./modules/relations');
     require('./modules/intervenants/models/intervenants.models');
     require('./modules/users/models/users.models');
     require('./modules/documents/models/documents.models');

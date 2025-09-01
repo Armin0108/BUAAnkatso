@@ -4,7 +4,6 @@ const Intervenant= require('../../intervenants/models/intervenants.models');
 const TypeIntervenant= require('../../typeintervenants/models/typeintervenants.models');
 const Motcle=require('../../motcles/models/motcles.models');
 const UrlVideo= require('../../urlVideo/models/urlVideo.models');
-const fs = require('fs');
 const { Op } = require("sequelize");
 
 
@@ -127,4 +126,27 @@ const advancedSearch = async (req, res) => {
 };
 
 
-module.exports = { listVideos, VideosDetails, advancedSearch };
+// =================== SUPPRESSION ===================
+const deleteVideo = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifie si la vidéo existe
+    const video = await UrlVideo.findByPk(id);
+    if (!video) {
+      return res.status(404).json({ message: "Vidéo introuvable" });
+    }
+
+    // Supprimer uniquement la vidéo
+    await video.destroy();
+
+    res.status(200).json({ message: "Vidéo supprimée avec succès" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+
+module.exports = { listVideos, VideosDetails, advancedSearch,deleteVideo };

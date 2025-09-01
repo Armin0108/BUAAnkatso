@@ -6,6 +6,7 @@ const Motcle=require('../../motcles/models/motcles.models');
 const UrlVideo= require('../../urlVideo/models/urlVideo.models');
 const fs = require('fs'); // au début du fichier
 const path = require('path');
+const checkRole = require('../../../middlewares/checkRole');
 
 const createFullDocument = async (req, res) => {
     try {
@@ -189,4 +190,39 @@ const createFullDocument = async (req, res) => {
     }
 };
 
-module.exports= {createFullDocument};
+//UPDATE SUPERADMIN SEULEMENT//
+//---------------------------//
+
+const updateDocument = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { titre, typeDocument, datepub, domaine, auteur, bio } = req.body;
+  
+      const document = await Document.findByPk(id);
+      if (!document) return res.status(404).json({ message: "Document introuvable" });
+  
+      // Si un typeDocument est fourni, on le crée ou récupère
+      if (typeDocument) {
+        let typeDoc = await TypeDocument.findOne({ where: { typeDocuments: typeDocument } });
+        if (!typeDoc) {
+          typeDoc = await TypeDocument.create({ typeDocuments: typeDocument });
+        }
+        document.typeDocumentId = typeDoc.id;
+      }
+  
+      // Mise à jour seulement des champs fournis
+      if (titre) document.titre = titre;
+      if (datepub) document.datepub = datepub;
+      if (domaine) document.domaine = domaine;
+      if (auteur) document.auteur = auteur;
+      if (bio) document.bio = bio;
+  
+      await document.save();
+      res.json({ message: "Document mis à jour avec succès", document });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erreur serveur", error: error.message });
+    }
+};
+
+module.exports= {createFullDocument,updateDocument};//

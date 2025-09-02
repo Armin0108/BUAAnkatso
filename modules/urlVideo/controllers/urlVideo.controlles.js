@@ -8,7 +8,7 @@ const { Op } = require("sequelize");
 
 
 // -----------------------------
-// Liste globale + recherche par mot-clé
+// Liste globale + recherche par mot-clé RECHERCHE MOTEUR DE RECHERCHE
 // -----------------------------
 
 const listVideos = async (req, res) => {
@@ -37,7 +37,7 @@ const listVideos = async (req, res) => {
       };
   
       const videos = await UrlVideo.findAll({
-        attributes: ['id','resume'],
+        attributes: ['id','resume'],//id pour le details
         where: whereClause,
         include: [
           { model: Document, as: "document",
@@ -59,11 +59,11 @@ const listVideos = async (req, res) => {
   };
 
 // -----------------------------
-// Détails de l'une des liste après clic
+// Détails de l'une des liste après clic  AFFICHAGE DU RESULTAT
 // -----------------------------
 const VideosDetails = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params;//id urlVideo
   
       const videos = await UrlVideo.findByPk(id,{
         attributes: ['urlVideo', 'duree', 'resume'],
@@ -95,14 +95,14 @@ const advancedSearch = async (req, res) => {
       const { nomIntervenant, prenomIntervenant, titreDocument, auteurDocument } = req.body;
   
       const videos = await UrlVideo.findAll({
-        attributes: ['urlVideo', 'duree', 'resume'],
+        attributes: ['id','urlVideo','resume'], //pour details
         include: [
           { model: Intervenant, as: "intervenant", 
-            attributes:['nom','prenom','image','bio'],
-            include: [{ model: TypeIntervenant, as: "type", attributes:['typeIntervenants'] }], required: true },
+            attributes:['nom','prenom','image'],
+            include: [{ model: TypeIntervenant, as: "type", attributes:[] }], required: true },
           { model: Document, as: "document", 
-            attributes: ['titre','auteur', 'datepub','domaine','bio', 'urlLivre','mention'],
-            include: [{ model: TypeDocument, as: "type", attributes:['typeDocuments'] }], required: true }
+            attributes: ['titre','auteur'],
+            include: [{ model: TypeDocument, as: "type", attributes:[] }], required: true }
         ],
         where: {
           ...(nomIntervenant && { "$intervenant.nom$": { [Op.iLike]: `%${nomIntervenant}%` } }),
@@ -126,10 +126,76 @@ const advancedSearch = async (req, res) => {
 };
 
 
-// =================== SUPPRESSION ===================
+
+//=========COTE ADMINISTRATION========//
+
+
+// -----------------------------
+// LISTE DE TOUS LES VIDEOS - INTERVENANT- DOCUMENTS POUR VOIR LA LIAISON ENTRE DOC ET VIDEO
+// -----------------------------
+
+const listAllVideos = async (req, res) => {
+  try {
+    const videos = await UrlVideo.findAll({
+      attributes: ['id', 'urlVideo'],
+      include: [
+        { model: Document, as: "document",
+          attributes: ['id','titre','auteur'],
+          include: [
+            { model: TypeDocument, as: "type", attributes: ['typeDocuments'] },
+            { model: Motcle, as: "motcles", attributes: [] }
+          ]
+        },
+        { model: Intervenant, as: "intervenant",
+          attributes: ['id','nom','prenom','image'],
+          include: [
+            { model: TypeIntervenant, as: "type", attributes: ['typeIntervenants'] }
+          ]
+        }
+      ]
+    });
+
+    res.status(200).json({ data: videos });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+
+// -----------------------------
+// UPDATE VIDEO (URL, durée, résumé)
+// -----------------------------
+const updateVideo = async (req, res) => {
+  try {
+    const { id } = req.params; // id de la vidéo
+    const { urlVideo, duree, resume } = req.body;
+
+    // Chercher la vidéo
+    const video = await UrlVideo.findByPk(id);
+    if (!video) {
+      return res.status(404).json({ message: "Vidéo non trouvée" });
+    }
+
+    // Mettre à jour seulement les champs autorisés
+    if (urlVideo) video.urlVideo = urlVideo;
+    if (duree) video.duree = duree;
+    if (resume !== undefined) video.resume = resume;
+
+    await video.save();
+
+    res.status(200).json({ message: "Vidéo mise à jour avec succès", data: video });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+
+// =================== SUPPRESSION D'UNE VIDEO / PAS LE DOC NI INTERVENANT===================
 const deleteVideo = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // id video à supprimer après clic sur listAllVideos
 
     // Vérifie si la vidéo existe
     const video = await UrlVideo.findByPk(id);
@@ -149,4 +215,5 @@ const deleteVideo = async (req, res) => {
 };
 
 
-module.exports = { listVideos, VideosDetails, advancedSearch,deleteVideo };
+
+module.exports = { listVideos, VideosDetails, advancedSearch, listAllVideos,updateVideo, deleteVideo };

@@ -29,6 +29,7 @@ const createFullDocument = async (req, res) => {
 
        // Récupération pdf 
        const pdfFile = req.files.pdfFile?.[0];
+
        //Vérification et création document
        let document= await Document.findOne({where:{titre,auteur,typeDocumentId:typeDoc.id}});
         
@@ -43,22 +44,20 @@ const createFullDocument = async (req, res) => {
                 datepub,
                 urlLivre: pdfFile ? pdfFile.filename: null
             });
-        }else if (pdfFile) {
+        } else if (pdfFile) {
             // Document existant + nouveau PDF → remplacer l'ancien
-            const oldPdfPath = document.urlLivre;
+            const oldPdf = document.urlLivre;
             document.urlLivre = pdfFile.filename;
             await document.save();
         
-            // Supprimer l'ancien fichier PDF
-            if (oldPdfPath) {
-                const fullPath= path.join(__dirname,'../../../uploads/documents',oldPdfPath);
-                if(fs.existsSync(fullPath)){
-                    fs.unlink(fullPath,(err)=>{
-                        if(err) console.error("Erreur de suppression ancien PDF:", err);
-                        else console.log("Ancien PDF supprimé: ", fullPath);
+            // Supprimer l'ancien PDF si il existe
+            if (oldPdf) {
+                const fullPath = path.join(__dirname, '../../../uploads/documents', oldPdf);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlink(fullPath, (err) => {
+                        if (err) console.error("Erreur suppression ancien PDF:", err);
+                        else console.log("Ancien PDF supprimé:", fullPath);
                     });
-                }else {
-                    console.warn("Ancien PDF introuvable : ", fullPath);
                 }
             }
         }
@@ -72,6 +71,8 @@ const createFullDocument = async (req, res) => {
 
         //Vérification et Création intervenant
         const imageFile = req.files.imageFile?.[0];
+        
+        const newImageName = imageFile ? imageFile.filename : null;
 
         let intervenant= await Intervenant.findOne({where: {nom:intervData.nom,prenom:intervData.prenom}});
         
@@ -81,32 +82,29 @@ const createFullDocument = async (req, res) => {
                 prenom: intervData.prenom,
                 typeIntervenantId: typeInterv.id,
                 bio: intervData.bio||null,
-                image: imageFile ? imageFile.filename :  null
+                image: newImageName
             });
-        }else {
-            intervenant.typeIntervenantId = typeInterv.id;  
-            intervenant.bio = intervData.bio || intervenant.bio;
-            if (imageFile) {
+        } else if (newImageName) {
             // Intervenant existant + nouvelle image → remplacer l'ancienne
-            const oldImagePath = intervenant.image;
-            intervenant.image = imageFile.filename;
+            const oldImage = intervenant.image;
+        
+            intervenant.image = newImageName;
             await intervenant.save();
         
-            // Supprimer l'ancienne image
-                if (oldImagePath ) {
-                    const fullPath = path.join(__dirname, '../../../uploads/intervenants', oldImagePath);
-                    fs.unlink(fullPath,(err) => {
+            // Supprimer l'ancienne image si elle existe
+            if (oldImage) {
+                const fullPath = path.join(__dirname, "../../../uploads/intervenants", oldImage);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlink(fullPath, (err) => {
                         if (err) console.error("Erreur suppression ancienne image:", err);
-                        else console.log("Ancienne image supprimé: ",fullPath);
+                        else console.log("Ancienne image supprimée:", fullPath);
                     });
-                }else{
-                    console.warn("Ancienne image introuvable: ",fullPath);
                 }
             }
         }
         
         //Création vidéo
-        let urlVideo;
+        let urlVideoInstance; //pour stocké la video
         let existingVideo=await UrlVideo.findOne({
             where: {documentId: document.id, intervenantId:intervenant.id}
         });
@@ -119,24 +117,19 @@ const createFullDocument = async (req, res) => {
                 });
             }else{
                 //Même doc + même intervenant mais vidéo différenete== on remplace l'ancienne video
-                await existingVideo.update({
+                urlVideoInstance= await existingVideo.update({
                     urlVideo: videoData.url,
                     duree: videoData.duree,
                     resume: videoData.resume||null
                 });
-
-                return res.status(200).json({
-                    message: "Vidéo remplacée avec succès.",
-                    video: existingVideo
-                });
             }
         }else{
-                const urlVideo= await UrlVideo.create({
-                urlVideo: videoData.url,
-                duree: videoData.duree,
-                resume: videoData.resume|| null,
-                documentId: document.id,
-                intervenantId: intervenant.id  
+            urlVideoInstance= await UrlVideo.create({
+                    urlVideo: videoData.url,
+                    duree: videoData.duree,
+                    resume: videoData.resume|| null,
+                    documentId: document.id,
+                    intervenantId: intervenant.id  
             });
         }
 
@@ -180,7 +173,7 @@ const createFullDocument = async (req, res) => {
             message: 'Document, intervenat, video et mot-cleés créés avec succès',
             document,
             intervenant,
-            urlVideo,
+            urlVideo: urlVideoInstance,
             motscles
         });
 
@@ -190,12 +183,33 @@ const createFullDocument = async (req, res) => {
     }
 };
 
-//UPDATE SUPERADMIN SEULEMENT//
+
+// -----------------------------
+// LISTE DE TOUS DOCUMENTS pour Créer UN AUTRE INTERVENANT AUSSI
+// -----------------------------
+
+const listAllDocuments = async (req, res) => {
+    try {
+      const doc = await Document.findAll({
+        attributes: ['id', 'titre','auteur', 'bio','domaine','mention','datepub'],
+        include: [
+            { model: TypeDocument, as: "type", attributes: ['typeDocuments'] }
+        ]
+      });
+      res.status(200).json({ data: doc });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erreur serveur", error: error.message });
+    }
+  };
+
+
+//UPDATE DOCUMENT SUPERADMIN SEULEMENT//
 //---------------------------//
 
 const updateDocument = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params; //id doc 
       const { titre, typeDocument, datepub, domaine, auteur, bio } = req.body;
   
       const document = await Document.findByPk(id);
@@ -225,4 +239,5 @@ const updateDocument = async (req, res) => {
     }
 };
 
-module.exports= {createFullDocument,updateDocument};//
+
+module.exports= {createFullDocument,listAllDocuments,updateDocument};//
